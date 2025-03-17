@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research AI Assistant</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* Enhanced color palette with more gradient options */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --gradient-start: #4cc9f0;
+            --gradient-mid: #4895ef;
+            --gradient-end: #3f37c9;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+        
+        /* Base animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        /* Animated underline effect */
+        @keyframes underlineExpand {
+            from { width: 0; }
+            to { width: 50px; }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-color);
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        .navbar {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        .navbar-brand {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .navbar-brand i {
+            display: inline-block;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: white;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover:after {
+            width: 100%;
+        }
+        
+        .hero-section {
+            background: linear-gradient(-45deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end), var(--secondary-color));
+            background-size: 400% 400%;
+            animation: gradientFlow 15s ease infinite;
+            color: white;
+            padding: 4rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .hero-section h1 {
+            animation: fadeIn 1s ease-out 0.2s both;
+        }
+        
+        .hero-section p {
+            animation: fadeIn 1s ease-out 0.4s both;
+        }
+        
+        .hero-section .btn {
+            animation: fadeIn 1s ease-out 0.6s both;
+            transition: all 0.3s ease;
+        }
+        
+        .hero-section .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: var(--light-color);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+            transform: translateY(-2px);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .btn-primary:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+            transition: all 0.6s ease;
+            z-index: -1;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-primary:hover:before {
+            left: 100%;
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+            animation: pulse 3s infinite ease-in-out;
+        }
+        
+        .card:hover .feature-icon {
+            transform: scale(1.2) rotate(5deg);
+            color: var(--secondary-color);
+        }
+        
+        footer {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef, #f8f9fa);
+            padding: 2rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .section-title {
+            position: relative;
+            margin-bottom: 2rem;
+            font-weight: 700;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -10px;
+            width: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--accent-color), var(--primary-color));
+            animation: underlineExpand 1s ease-out 0.5s forwards;
+        }
+        
+        .form-label {
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-text {
+            color: #6c757d;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+        
+        /* Staggered animations for features */
+        #features .col-md-4:nth-child(1) .card {
+            animation-delay: 0.1s;
+        }
+        
+        #features .col-md-4:nth-child(2) .card {
+            animation-delay: 0.3s;
+        }
+        
+        #features .col-md-4:nth-child(3) .card {
+            animation-delay: 0.5s;
+        }
+        
+        /* Loading animation */
+        .loading {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .loading:after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+        
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .hero-section {
+                padding: 2rem 0;
+            }
+            
+            .hero-section h1 {
+                font-size: 2rem;
+            }
+            
+            .hero-section p {
+                font-size: 1rem;
+            }
+            
+            .card {
+                margin-bottom: 1rem;
+            }
+            
+            .feature-icon {
+                font-size: 2rem;
+            }
+            
+            .section-title {
+                font-size: 1.75rem;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            .hero-section h1 {
+                font-size: 1.75rem;
+            }
+            
+            .btn-lg {
+                padding: 0.5rem 1rem;
+                font-size: 1rem;
+            }
+            
+            .card-header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .form-control, .form-select {
+                padding: 0.5rem 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <i class="bi bi-journal-text me-2"></i>
+                Research AI Assistant
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="bi bi-house-door me-1"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#features"><i class="bi bi-stars me-1"></i> Features</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#research-form"><i class="bi bi-search me-1"></i> Research</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-3">Advanced Research Assistant AI</h1>
+            <p class="lead mb-4">Streamline your research process with our cutting-edge AI assistant. Process PDFs, YouTube videos, and more with ease.</p>
+            <a href="#research-form" class="btn btn-light btn-lg"><i class="bi bi-arrow-down-circle me-2"></i>Get Started</a>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <!-- Features Section -->
+        <section id="features" class="py-5">
+            <h2 class="section-title">Key Features</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-file-earmark-pdf feature-icon"></i>
+                            <h5 class="card-title">PDF Analysis</h5>
+                            <p class="card-text">Upload and analyze PDF documents to extract key insights and information.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-youtube feature-icon"></i>
+                            <h5 class="card-title">YouTube Transcripts</h5>
+                            <p class="card-text">Process YouTube videos to extract and analyze their transcripts.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card h-100">
+                        <div class="card-body text-center">
+                            <i class="bi bi-lightbulb feature-icon"></i>
+                            <h5 class="card-title">AI-Powered Insights</h5>
+                            <p class="card-text">Get intelligent analysis and synthesis of your research materials.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Research Form Section -->
+        <section id="research-form" class="py-5">
+            <h2 class="section-title">Research Assistant</h2>
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <i class="bi bi-search me-2"></i>
+                    <span>Research Query Form</span>
+                </div>
+                <div class="card-body">
+                    <form action="/" method="post" enctype="multipart/form-data">
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="role" class="form-label">Your Role or Persona</label>
+                                <input type="text" class="form-control" id="role" name="role" placeholder="e.g., AI Researcher, Data Analyst" required>
+                                <div class="form-text">How would you like to identify yourself for this research?</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="topic" class="form-label">Main Topic or Subject</label>
+                                <input type="text" class="form-control" id="topic" name="topic" placeholder="e.g., Artificial Intelligence, Climate Change" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="research_task" class="form-label">Research Task Description</label>
+                            <textarea class="form-control" id="research_task" name="research_task" rows="2" placeholder="Describe your specific research task in detail" required></textarea>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="action" class="form-label">Action to Perform</label>
+                                <select class="form-select" id="action" name="action" required>
+                                    <option value="" selected disabled>Select an action...</option>
+                                    <option value="summarize">Summarize</option>
+                                    <option value="analyze">Analyze</option>
+                                    <option value="compare">Compare</option>
+                                    <option value="critique">Critique</option>
+                                    <option value="synthesize">Synthesize</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="preferred_format" class="form-label">Preferred Output Format</label>
+                                <select class="form-select" id="preferred_format" name="preferred_format" required>
+                                    <option value="" selected disabled>Select a format...</option>
+                                    <option value="bullet points">Bullet Points</option>
+                                    <option value="structured report">Structured Report</option>
+                                    <option value="table">Table</option>
+                                    <option value="executive summary">Executive Summary</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="specific_aspects" class="form-label">Specific Aspects to Focus On</label>
+                            <textarea class="form-control" id="specific_aspects" name="specific_aspects" rows="2" placeholder="List specific aspects or details you want the analysis to focus on"></textarea>
+                        </div>
+
+                        <h5 class="mt-4 mb-3">Attachments & Sources</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3">
+                                <label for="pdf" class="form-label">PDF Document</label>
+                                <input type="text" class="form-control mb-2" id="pdf" name="pdf" placeholder="Enter PDF file path or URL">
+                                <div class="input-group">
+                                    <input type="file" class="form-control" id="pdf_file" name="pdf_file" accept=".pdf">
+                                </div>
+                                <small class="form-text text-muted">Upload a PDF file or enter a URL</small>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="youtube" class="form-label">YouTube Video</label>
+                                <input type="text" class="form-control" id="youtube" name="youtube" placeholder="Enter YouTube URL">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label for="website" class="form-label">Website</label>
+                                <input type="text" class="form-control" id="website" name="website" placeholder="Enter website URL">
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-6 mb-3">
+                                <label for="desired_qualities" class="form-label">Desired Qualities</label>
+                                <input type="text" class="form-control" id="desired_qualities" name="desired_qualities" placeholder="e.g., peer-reviewed, up-to-date, comprehensive">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="additional_requirements" class="form-label">Additional Requirements</label>
+                                <input type="text" class="form-control" id="additional_requirements" name="additional_requirements" placeholder="e.g., citations, statistical analysis">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="user_prompt" class="form-label">Additional Prompt (Optional)</label>
+                            <textarea class="form-control" id="user_prompt" name="user_prompt" rows="2" placeholder="Any additional instructions or context for the AI"></textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">AI Model Selection</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="model_selection" id="creative" value="1" checked>
+                                <label class="form-check-label" for="creative">
+                                    <i class="bi bi-stars me-1"></i> Creative Mode (Temperature: 0.7)
+                                    <small class="text-muted d-block">More varied and creative responses</small>
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="model_selection" id="datadriven" value="2">
+                                <label class="form-check-label" for="datadriven">
+                                    <i class="bi bi-graph-up me-1"></i> Data-Driven Mode (Temperature: 0.2)
+                                    <small class="text-muted d-block">More focused and precise responses</small>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-search me-2"></i>Generate Research
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-journal-text me-2"></i>Research AI Assistant</h5>
+                    <p class="text-muted">Empowering researchers with advanced AI capabilities.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">© 2025 Research AI Assistant. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

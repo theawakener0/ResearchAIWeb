@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Research Results - Research AI Assistant</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <style>
+        /* Enhanced color palette with more gradient options */
+        :root {
+            --primary-color: #4361ee;
+            --secondary-color: #3f37c9;
+            --accent-color: #4895ef;
+            --gradient-start: #4cc9f0;
+            --gradient-mid: #4895ef;
+            --gradient-end: #3f37c9;
+            --light-color: #f8f9fa;
+            --dark-color: #212529;
+        }
+        
+        /* Base animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes gradientFlow {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
+        }
+        
+        /* Animated underline effect */
+        @keyframes underlineExpand {
+            from { width: 0; }
+            to { width: 50px; }
+        }
+        
+        /* Content reveal animation */
+        @keyframes revealContent {
+            from { max-height: 0; opacity: 0; }
+            to { max-height: 1000px; opacity: 1; }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            color: var(--dark-color);
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        .navbar {
+            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+        
+        .navbar-brand {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .navbar-brand i {
+            display: inline-block;
+            animation: pulse 2s infinite ease-in-out;
+        }
+        
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: white;
+            transition: width 0.3s ease;
+        }
+        
+        .nav-link:hover:after {
+            width: 100%;
+        }
+        
+        .header-section {
+            background: linear-gradient(-45deg, var(--gradient-start), var(--gradient-mid), var(--gradient-end), var(--secondary-color));
+            background-size: 400% 400%;
+            animation: gradientFlow 15s ease infinite;
+            color: white;
+            padding: 2.5rem 0;
+            margin-bottom: 2rem;
+            border-radius: 0 0 30px 30px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header-section h1 {
+            animation: fadeIn 1s ease-out 0.2s both;
+        }
+        
+        .header-section p {
+            animation: fadeIn 1s ease-out 0.4s both;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-bottom: 1.5rem;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out forwards;
+        }
+        
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+        }
+        
+        .card-header {
+            background-color: var(--light-color);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border-radius: 15px 15px 0 0 !important;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            border-radius: 10px;
+            padding: 0.75rem 1.5rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .btn-primary:before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255,255,255,0.1), rgba(255,255,255,0.4), rgba(255,255,255,0.1));
+            transition: all 0.6s ease;
+            z-index: -1;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(45deg, var(--secondary-color), var(--primary-color));
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+        }
+        
+        .btn-primary:hover:before {
+            left: 100%;
+        }
+        
+        .btn-outline-secondary {
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-outline-secondary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        footer {
+            background: linear-gradient(to right, #f8f9fa, #e9ecef, #f8f9fa);
+            padding: 2rem 0;
+            margin-top: 3rem;
+            border-top: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .research-content {
+            line-height: 1.7;
+            font-size: 1.05rem;
+            opacity: 0;
+            animation: fadeIn 1s ease-out 0.6s forwards;
+        }
+        
+        .research-content h1, 
+        .research-content h2, 
+        .research-content h3, 
+        .research-content h4, 
+        .research-content h5, 
+        .research-content h6 {
+            color: var(--primary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 1rem;
+            position: relative;
+        }
+        
+        .research-content h2:after,
+        .research-content h3:after {
+            content: '';
+            position: absolute;
+            left: 0;
+            bottom: -5px;
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, var(--accent-color), transparent);
+            animation: underlineExpand 1s ease-out forwards;
+        }
+        
+        .research-content ul, 
+        .research-content ol {
+            padding-left: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .research-content blockquote {
+            border-left: 4px solid var(--accent-color);
+            padding-left: 1rem;
+            margin-left: 0;
+            color: #495057;
+            font-style: italic;
+            background-color: rgba(72, 149, 239, 0.05);
+            padding: 1rem;
+            border-radius: 0 10px 10px 0;
+            transition: all 0.3s ease;
+        }
+        
+        .research-content blockquote:hover {
+            transform: translateX(5px);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .research-content table {
+            width: 100%;
+            margin-bottom: 1.5rem;
+            border-collapse: collapse;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .research-content table th,
+        .research-content table td {
+            padding: 0.75rem;
+            border: 1px solid #dee2e6;
+            transition: all 0.3s ease;
+        }
+        
+        .research-content table th {
+            background: linear-gradient(to right, var(--light-color), #e9ecef);
+        }
+        
+        .research-content table tr:hover td {
+            background-color: rgba(72, 149, 239, 0.05);
+        }
+        
+        .research-meta {
+            background: linear-gradient(to bottom right, #f8f9fa, #e9ecef);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+            opacity: 0;
+            animation: fadeIn 0.8s ease-out 0.4s forwards;
+        }
+        
+        .research-meta:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+        
+        .research-meta-item {
+            margin-bottom: 0.8rem;
+            position: relative;
+            padding-left: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .research-meta-item:before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--accent-color);
+            font-size: 1.2rem;
+        }
+        
+        .research-meta-item:hover {
+            transform: translateX(5px);
+        }
+        
+        .research-meta-label {
+            font-weight: 600;
+            color: var(--primary-color);
+            transition: all 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="bi bi-journal-text me-2"></i>
+                Research AI Assistant
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-house-door me-1"></i> Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="bi bi-file-text me-1"></i> Results</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}#research-form"><i class="bi bi-search me-1"></i> New Research</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Header Section -->
+    <section class="header-section">
+        <div class="container">
+            <h1 class="fw-bold mb-2">Research Results</h1>
+            <p class="lead mb-0">AI-generated insights based on your research query</p>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- Research Content -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-file-text me-2"></i>
+                        <span>Research Output</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="research-content">
+                            {% if result %}
+                                {{ result | safe }}
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    No research results available. Please go back to the home page and submit a research query.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-4">
+                <!-- Research Metadata -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <span>Research Information</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="research-meta">
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Topic:</span>
+                                <span>{{ topic if topic else 'Not specified' }}</span>
+                            </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Role:</span>
+                                <span>{{ role if role else 'Not specified' }}</span>
+                            </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Action:</span>
+                                <span>{{ action if action else 'Not specified' }}</span>
+                            </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Format:</span>
+                                <span>{{ preferred_format if preferred_format else 'Not specified' }}</span>
+                            </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Model:</span>
+                                <span>{{ 'Creative' if model_selection == '1' else 'Data-Driven' }}</span>
+                            </div>
+                        </div>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{{ url_for('index') }}" class="btn btn-primary">
+                                <i class="bi bi-search me-2"></i>New Research
+                            </a>
+                            <button onclick="window.print()" class="btn btn-outline-secondary">
+                                <i class="bi bi-printer me-2"></i>Print Results
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sources -->
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-link-45deg me-2"></i>
+                        <span>Sources</span>
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            {% if pdf and pdf != 'No PDF provided' %}
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="bi bi-file-earmark-pdf me-2 text-danger"></i>
+                                <span>{{ pdf }}</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% if youtube and youtube != 'No video provided' %}
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="bi bi-youtube me-2 text-danger"></i>
+                                <span>{{ youtube }}</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% if website and website != 'No website provided' %}
+                            <li class="list-group-item d-flex align-items-center">
+                                <i class="bi bi-globe me-2 text-primary"></i>
+                                <span>{{ website }}</span>
+                            </li>
+                            {% endif %}
+                            
+                            {% if not pdf and not youtube and not website or (pdf == 'No PDF provided' and youtube == 'No video provided' and website == 'No website provided') %}
+                            <li class="list-group-item text-muted">
+                                <i class="bi bi-info-circle me-2"></i>
+                                No sources provided
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Extracted Content -->
+                {% if pdf_content or website_content %}
+                <div class="card mb-4">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-file-text me-2"></i>
+                        <span>Extracted Content</span>
+                    </div>
+                    <div class="card-body">
+                        <ul class="nav nav-tabs" id="contentTabs" role="tablist">
+                            {% if pdf_content %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="pdf-tab" data-bs-toggle="tab" data-bs-target="#pdf-content" type="button" role="tab" aria-controls="pdf-content" aria-selected="true">
+                                    <i class="bi bi-file-earmark-pdf me-1"></i> PDF
+                                </button>
+                            </li>
+                            {% endif %}
+                            {% if website_content %}
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link {% if not pdf_content %}active{% endif %}" id="web-tab" data-bs-toggle="tab" data-bs-target="#web-content" type="button" role="tab" aria-controls="web-content" aria-selected="{% if not pdf_content %}true{% else %}false{% endif %}">
+                                    <i class="bi bi-globe me-1"></i> Website
+                                </button>
+                            </li>
+                            {% endif %}
+                        </ul>
+                        <div class="tab-content pt-3" id="contentTabsContent">
+                            {% if pdf_content %}
+                            <div class="tab-pane fade show active" id="pdf-content" role="tabpanel" aria-labelledby="pdf-tab">
+                                <div class="extracted-content" style="max-height: 300px; overflow-y: auto;">
+                                    <h6 class="mb-3">Extracted from: {{ pdf_filename }}</h6>
+                                    <div class="pdf-text">
+                                        {% for chunk in pdf_content %}
+                                        <div class="content-chunk mb-2 p-2 border-bottom">
+                                            <p>{{ chunk.page_content }}</p>
+                                            <small class="text-muted">Page: {{ chunk.metadata.page + 1 }}</small>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                            {% if website_content %}
+                            <div class="tab-pane fade {% if not pdf_content %}show active{% endif %}" id="web-content" role="tabpanel" aria-labelledby="web-tab">
+                                <div class="extracted-content" style="max-height: 300px; overflow-y: auto;">
+                                    <h6 class="mb-3">Extracted from: {{ website }}</h6>
+                                    <div class="website-text">
+                                        {% for chunk in website_content %}
+                                        <div class="content-chunk mb-2 p-2 border-bottom">
+                                            <p>{{ chunk.page_content }}</p>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5><i class="bi bi-journal-text me-2"></i>Research AI Assistant</h5>
+                    <p class="text-muted">Empowering researchers with advanced AI capabilities.</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-muted">© 2025 Research AI Assistant. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
