@@ -521,6 +521,18 @@
                             </div>
                         </div>
 
+                        <!-- Add this inside the form, after the research mode selection -->
+                        <div class="mb-4">
+                            <label for="iterations" class="form-label">Research Iterations</label>
+                            <select class="form-select" id="iterations" name="iterations">
+                                <option value="1">Single Iteration (Quick Research)</option>
+                                <option value="2">Two Iterations (Standard Depth)</option>
+                                <option value="3" selected>Three Iterations (Comprehensive)</option>
+                                <option value="4">Four Iterations (In-depth Analysis)</option>
+                                <option value="5">Five Iterations (Expert-level Research)</option>
+                            </select>
+                            <div class="form-text">Multiple iterations allow for deeper, more refined research results.</div>
+                        </div>
                         <div class="text-center">
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-search me-2"></i>Generate Research

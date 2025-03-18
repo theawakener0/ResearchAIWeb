@@ -336,7 +336,7 @@
                         <a class="nav-link active" href="#"><i class="bi bi-file-text me-1"></i> Results</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{{ url_for('index') }}#research-form"><i class="bi bi-search me-1"></i> New Research</a>
+                        <a class="nav-link" href="{{ url_for('index') }}"><i class="bi bi-search me-1"></i> New Research</a>
                     </li>
                 </ul>
             </div>
@@ -404,6 +404,10 @@
                             <div class="research-meta-item">
                                 <span class="research-meta-label">Model:</span>
                                 <span>{{ 'Creative' if model_selection == '1' else 'Data-Driven' }}</span>
+                            </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Date:</span>
+                                <span>{{ date if date else now().strftime('%Y-%m-%d') }}</span>
                             </div>
                         </div>
                         <div class="d-grid gap-2 mt-3">

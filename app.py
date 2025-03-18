@@ -21,6 +21,9 @@ from datetime import datetime
 
 app = Flask(__name__)
 
+# Add Jinja2 global variables
+app.jinja_env.globals.update(now=datetime.now)
+
 # Configure upload folder
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
@@ -66,7 +69,7 @@ def generate_research_response(query: str):
         llm = GoogleGenerativeAI(
             model="gemini-2.0-pro-exp-02-05",
             api_key=API_KEY,
-            temperature=1.0,
+            temperature=0.5,
             top_p=0.95,
             top_k=64,
             max_output_tokens=8192
@@ -249,6 +252,194 @@ Additionally, cross-reference the provided sources to ensure consistency, highli
     return prompt_template
 
 
+# Enhanced research pipeline with multi-iteration and structured output
+def enhanced_research_pipeline(query, iterations=3, research_mode="standard", model_selection="1"):
+    """
+    Performs deep research with multiple iterations to refine results
+    
+    Args:
+        query: The research query
+        iterations: Number of research iterations
+        research_mode: 'standard' or 'advanced'
+        model_selection: '1' for creative, '2' for data-driven
+    
+    Returns:
+        Structured research output with executive summary
+    """
+    # Initialize research components
+    accumulated_research = ""
+    research_plan = ""
+    
+    # Step 1: Generate Research Plan
+    planning_prompt = f"""
+    You are a research planning expert. Create a structured research plan for the following query:
+    
+    {query}
+    
+    Your plan should include:
+    1. Clear research objectives
+    2. 3-5 key questions to investigate
+    3. A structured outline with sections (Introduction, Key Areas to Explore, Methodology, Expected Outcomes)
+    4. Specific search terms that would yield the best results
+    
+    Format your response as a structured research plan.
+    """
+    
+    # Select model based on user preference
+    if model_selection == "1":
+        planning_model = model_creative
+    else:
+        planning_model = model_datadriven
+    
+    # Generate research plan
+    research_plan = planning_model.invoke(planning_prompt)
+    accumulated_research += f"## Research Plan\n\n{research_plan}\n\n"
+    
+    # Step 2: Iterative Research Process
+    for i in range(iterations):
+        iteration_prompt = f"""
+        RESEARCH ITERATION {i+1}/{iterations}
+        
+        PREVIOUS FINDINGS:
+        {accumulated_research if i > 0 else "Initial research iteration"}
+        
+        RESEARCH PLAN:
+        {research_plan}
+        
+        CURRENT QUERY:
+        {query}
+        
+        Your task for this iteration:
+        {
+            "Explore broadly and generate creative insights and connections." if model_selection == "1" else 
+            "Focus on factual accuracy, data-driven analysis, and critical evaluation of sources."
+        }
+        
+        For this iteration, please:
+        1. Focus on a different aspect of the research question
+        2. Provide specific insights not covered in previous iterations
+        3. Identify any gaps or contradictions in the research so far
+        4. Add depth to the most promising areas identified
+        
+        Format your response as a structured section that can be integrated into the final research document.
+        """
+        
+        # Use appropriate research method based on mode
+        if research_mode == "advanced" and research_agent:
+            iteration_result = run_research_agent(iteration_prompt)
+        else:
+            # Use standard model
+            if model_selection == "1":
+                iteration_result = model_creative.invoke(iteration_prompt)
+            else:
+                iteration_result = model_datadriven.invoke(iteration_prompt)
+        
+        # Add iteration results to accumulated research
+        accumulated_research += f"## Research Iteration {i+1}\n\n{iteration_result}\n\n"
+        
+        # Reflection and refinement step
+        if i < iterations - 1:
+            reflection_prompt = f"""
+            REFLECTION ON RESEARCH PROGRESS
+            
+            CURRENT ACCUMULATED RESEARCH:
+            {accumulated_research}
+            
+            Please analyze the research conducted so far and provide:
+            1. What are the most valuable insights discovered?
+            2. What important questions remain unanswered?
+            3. What should be the focus of the next research iteration?
+            4. How should we refine our approach for the next iteration?
+            
+            Your reflection will guide the next research iteration.
+            """
+            
+            # Use data-driven model for reflection regardless of user selection
+            reflection = model_datadriven.invoke(reflection_prompt)
+            accumulated_research += f"## Research Reflection\n\n{reflection}\n\n"
+    
+    # Step 3: Generate Executive Summary and Final Structure
+    summary_prompt = f"""
+    EXECUTIVE SUMMARY GENERATION
+    
+    FULL RESEARCH DOCUMENT:
+    {accumulated_research}
+    
+    Please create a comprehensive executive summary of the research findings. Your summary should:
+    1. Provide a concise overview of the key findings
+    2. Highlight the most important insights
+    3. Summarize the methodology used
+    4. Suggest potential applications or next steps
+    
+    Format your response as a professional executive summary section to be placed at the beginning of the research document.
+    """
+    
+    executive_summary = model_datadriven.invoke(summary_prompt)
+    
+    # Step 4: Final formatting and structure
+    final_structure_prompt = f"""
+    FINAL RESEARCH DOCUMENT STRUCTURING
+    
+    EXECUTIVE SUMMARY:
+    {executive_summary}
+    
+    ACCUMULATED RESEARCH:
+    {accumulated_research}
+    
+    Please create a well-structured final research document that integrates all the research findings. Your document should:
+    1. Begin with the executive summary
+    2. Have a clear introduction
+    3. Organize the findings into logical sections with headings
+    4. Include a conclusion section
+    5. Add citations and references where appropriate
+    
+    Format your response as a complete, professional research document.
+    """
+    
+    if model_selection == "1":
+        final_document = model_creative.invoke(final_structure_prompt)
+    else:
+        final_document = model_datadriven.invoke(final_structure_prompt)
+    
+    return final_document
+
+
+def scrape_website(url):
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+        from langchain_core.documents import Document
+        
+        # Send a GET request to the URL
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()  # Raise an exception for 4XX/5XX responses
+        
+        # Parse the HTML content
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        # Remove script and style elements
+        for script in soup(["script", "style", "header", "footer", "nav"]):
+            script.extract()
+        
+        # Get the text content
+        text = soup.get_text(separator='\n', strip=True)
+        
+        # Split the text into chunks
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
+        chunks = [Document(page_content=chunk, metadata={"source": url}) for chunk in splitter.split_text(text)]
+        
+        return chunks
+    except Exception as e:
+        print(f"Error scraping website: {str(e)}")
+        return None
+
+
+
+
+
 @app.route('/', methods=['GET', 'POST'])
 @app.route('/index', methods=['GET', 'POST'])
 def index():
@@ -309,32 +500,58 @@ def index():
         if user_prompt:
             prompt_text += "\n\nAdditional instructions: " + user_prompt
         
-        # Get research mode
+        # Get research mode and iterations
         research_mode = request.form.get('research_mode', 'standard')
         model_selection = request.form.get('model_selection', '1')
+        iterations = int(request.form.get('iterations', '3'))
         
-        # Generate response based on research mode
-        if research_mode == 'advanced':
-            # Use the advanced research agent
-            response = run_research_agent(prompt_text)
+        # Generate response based on research mode and iterations
+        if iterations > 1:
+            # Use enhanced research pipeline for multi-iteration research
+            response = enhanced_research_pipeline(
+                prompt_text, 
+                iterations=iterations,
+                research_mode=research_mode,
+                model_selection=model_selection
+            )
         else:
-            # Use standard model
-            message = HumanMessage(prompt_text)
-            if model_selection == '1':
-                response = model_creative.invoke(message.content)
+            # Use standard research approach for single iteration
+            if research_mode == 'advanced':
+                # Use the advanced research agent
+                response = run_research_agent(prompt_text)
             else:
-                response = model_datadriven.invoke(message.content)
+                # Use standard model
+                message = HumanMessage(prompt_text)
+                if model_selection == '1':
+                    response = model_creative.invoke(message.content)
+                else:
+                    response = model_datadriven.invoke(message.content)
         
         # Convert markdown to HTML
         html_result = markdown.markdown(response)
         
-                # Create a unique session ID for this research session if not exists
+        # Create a unique session ID for this research session if not exists
         if 'chat_session_id' not in session:
             session['chat_session_id'] = str(uuid.uuid4())
         
-        # Initialize chat memory for this session
+        # Initialize chat memory and research metadata for this session
         session_id = session['chat_session_id']
         if session_id not in chat_sessions:
+            # Calculate word count
+            word_count = len(response.split())
+            
+            # Calculate sources count
+            sources_count = 0
+            if pdf_content:
+                sources_count += 1
+            if website_content:
+                sources_count += 1
+            if user_inputs["attachments"]["youtube"] != "No video provided":
+                sources_count += 1
+            
+            # Store session start time
+            start_time = datetime.now()
+            
             chat_sessions[session_id] = {
                 'messages': [],
                 'context': {
@@ -343,7 +560,10 @@ def index():
                     'topic': user_inputs["topic"],
                     'pdf': user_inputs["attachments"]["pdf"],
                     'youtube': user_inputs["attachments"]["youtube"],
-                    'website': user_inputs["attachments"]["website"]
+                    'website': user_inputs["attachments"]["website"],
+                    'start_time': start_time,
+                    'word_count': word_count,
+                    'sources_count': sources_count
                 }
             }
         
@@ -359,10 +579,12 @@ def index():
                               website=user_inputs["attachments"]["website"],
                               model_selection=model_selection,
                               research_mode=research_mode,
+                              iterations=iterations,
                               pdf_content=pdf_content,
                               pdf_filename=pdf_filename,
                               website_content=website_content,
-                              chat_session_id=session_id)
+                              chat_session_id=session_id,
+                              date=datetime.now().strftime('%Y-%m-%d'))
     
     # GET request - render index template
     return render_template('index.html')
@@ -451,7 +673,7 @@ Please provide helpful, accurate responses based on this research context."""
         # Generate AI response
         llm = GoogleGenerativeAI(
             model="gemini-2.0-pro-exp-02-05", 
-            temperature=0.7,
+            temperature=0.5,
             api_key=API_KEY
         )
         
