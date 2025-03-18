@@ -7,6 +7,13 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import markdown
+import requests
+from bs4 import BeautifulSoup
+from langchain_core.documents import Document
+from langchain.tools import Tool
+from langchain.agents import initialize_agent, AgentType
+from langchain_community.tools import WikipediaQueryRun
+from langchain_community.utilities import WikipediaAPIWrapper  # Add this import
 
 app = Flask(__name__)
 
@@ -17,6 +24,12 @@ app.secret_key = 'research_ai_secret_key'  # Required for flash messages
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+
+# API key for Google Gemini
+API_KEY = "AIzaSyAVoY_PlX6yY0g7_jBq-Awb_G9VqqgzghY"
+
+# Remove Google client initialization
+# Instead, we'll use LangChain's abstractions
 
 def load_and_split_pdf_document(file_path):
     try:
@@ -29,7 +42,7 @@ def load_and_split_pdf_document(file_path):
     except FileNotFoundError:
         return ""
 
-def youtube_client (video_url: str):
+def youtube_client(video_url: str):
     loader = YoutubeLoader.from_youtube_url(video_url)
     transcript = loader.load()
 
@@ -38,18 +51,106 @@ def youtube_client (video_url: str):
 
     return docs
 
-model_creative = GoogleGenerativeAI(model="gemini-2.0-flash-exp", 
-                            api_key="AIzaSyAVoY_PlX6yY0g7_jBq-Awb_G9VqqgzghY",
-                            temperature=0.7)
+# Advanced research agent functions
+def generate_research_response(query: str):
+    """
+    Generates a research response using LangChain's GoogleGenerativeAI wrapper
+    """
+    try:
+        # Use LangChain's wrapper instead of direct Google API
+        llm = GoogleGenerativeAI(
+            model="gemini-2.0-pro-exp-02-05",
+            api_key=API_KEY,
+            temperature=1.0,
+            top_p=0.95,
+            top_k=64,
+            max_output_tokens=8192
+        )
+        
+        response = llm.invoke(query)
+        return response
+    except Exception as e:
+        return f"Error generating research response: {str(e)}"
 
+# Define Wikipedia tool for research
+try:
+    # Create a WikipediaAPIWrapper instance first
+    wiki_api_wrapper = WikipediaAPIWrapper()
+    
+    # Pass the api_wrapper to WikipediaQueryRun
+    wikipedia_tool = Tool(
+        name="Wikipedia Search",
+        func=WikipediaQueryRun(api_wrapper=wiki_api_wrapper).run,
+        description="Searches Wikipedia for academic and general knowledge queries."
+    )
+except Exception as e:
+    print(f"Warning: Wikipedia tool initialization failed: {str(e)}")
+    wikipedia_tool = None
 
-model_datadriven = GoogleGenerativeAI(model="gemini-2.0-flash-exp", 
-                            api_key="AIzaSyAVoY_PlX6yY0g7_jBq-Awb_G9VqqgzghY",
-                            temperature=0.2)
+# Remove SerpAPI tool definition
+# Define LangChain Tool for research
+research_tool = Tool(
+    name="Research AI Agent",
+    func=generate_research_response,
+    description="Uses AI to perform research on a given query."
+)
+
+# Initialize LangChain Chat Model
+llm = GoogleGenerativeAI(
+    model="gemini-2.0-pro-exp-02-05", 
+    temperature=0.3,
+    api_key=API_KEY
+)
+
+# Create a LangChain agent with available research tools
+def initialize_research_agent():
+    tools = [research_tool]
+    if wikipedia_tool:
+        tools.append(wikipedia_tool)
+    # Remove SerpAPI tool from the agent
+    
+    try:
+        agent = initialize_agent(
+            tools=tools,
+            llm=llm,
+            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+            verbose=True,
+        )
+        return agent
+    except Exception as e:
+        print(f"Warning: Agent initialization failed: {str(e)}")
+        return None
+
+# Initialize the research agent
+research_agent = initialize_research_agent()
+
+def run_research_agent(query: str):
+    """
+    Runs the research agent with a given query, utilizing multiple sources.
+    """
+    if research_agent:
+        try:
+            return research_agent.run(query)
+        except Exception as e:
+            return f"Error running research agent: {str(e)}"
+    else:
+        return generate_research_response(query)  # Fallback to direct API call
+
+# Standard models for basic research
+model_creative = GoogleGenerativeAI(
+    model="gemini-2.0-flash-exp", 
+    api_key=API_KEY,
+    temperature=0.7
+)
+
+model_datadriven = GoogleGenerativeAI(
+    model="gemini-2.0-flash-exp", 
+    api_key=API_KEY,
+    temperature=0.2
+)
 
 message = [
     SystemMessage("""
-
 Advanced Research Assistant AI
 
 Mission Statement: Your primary objective is to augment and streamline the research endeavors of users by leveraging advanced artificial intelligence capabilities. You will facilitate the efficient acquisition, analysis, and synthesis of information from a multitude of sources, thereby enhancing the depth and breadth of research outcomes.
@@ -95,10 +196,7 @@ Performance Metrics:
     User Satisfaction: Maintain a user-centric approach, fostering a collaborative and supportive research environment.
 
 By embodying these principles and responsibilities, you will serve as an indispensable ally to researchers, empowering them to achieve greater efficacy and innovation in their scholarly pursuits."""),
-
 ]
-
-
 
 def get_user_inputs():
     user_inputs = {}
@@ -202,17 +300,21 @@ def index():
         if user_prompt:
             prompt_text += "\n\nAdditional instructions: " + user_prompt
         
-        # Create message
-        message = HumanMessage(prompt_text)
-        
-        # Get model selection
+        # Get research mode
+        research_mode = request.form.get('research_mode', 'standard')
         model_selection = request.form.get('model_selection', '1')
         
-        # Generate response based on model selection
-        if model_selection == '1':
-            response = model_creative.invoke(message.content)
+        # Generate response based on research mode
+        if research_mode == 'advanced':
+            # Use the advanced research agent
+            response = run_research_agent(prompt_text)
         else:
-            response = model_datadriven.invoke(message.content)
+            # Use standard model
+            message = HumanMessage(prompt_text)
+            if model_selection == '1':
+                response = model_creative.invoke(message.content)
+            else:
+                response = model_datadriven.invoke(message.content)
         
         # Convert markdown to HTML
         html_result = markdown.markdown(response)
@@ -228,6 +330,7 @@ def index():
                               youtube=user_inputs["attachments"]["youtube"],
                               website=user_inputs["attachments"]["website"],
                               model_selection=model_selection,
+                              research_mode=research_mode,
                               pdf_content=pdf_content,
                               pdf_filename=pdf_filename,
                               website_content=website_content)

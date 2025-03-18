@@ -423,6 +423,16 @@
                             </div>
                         </div>
 
+                        <!-- Add this to your form, before the model selection -->
+                        <div class="mb-3">
+                            <label for="research_mode" class="form-label">Research Mode</label>
+                            <select class="form-select" id="research_mode" name="research_mode">
+                                <option value="standard" selected>Standard (Faster)</option>
+                                <option value="advanced">Advanced Research Agent (More comprehensive)</option>
+                            </select>
+                            <div class="form-text">Advanced mode uses multiple research tools including Google Search, Wikipedia, and more.</div>
+                        </div>
+
                         <div class="mb-3">
                             <label for="research_task" class="form-label">Research Task Description</label>
                             <textarea class="form-control" id="research_task" name="research_task" rows="2" placeholder="Describe your specific research task in detail" required></textarea>
