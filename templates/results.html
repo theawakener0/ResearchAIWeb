@@ -516,6 +516,34 @@
                 {% endif %}
             </div>
         </div>
+        
+        <!-- Chat with AI Section -->
+        <div class="row mt-4 mb-5">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center">
+                        <i class="bi bi-chat-dots me-2"></i>
+                        <span>Chat with Research Assistant</span>
+                    </div>
+                    <div class="card-body">
+                        <div id="chat-container">
+                            <div id="chat-messages" class="mb-3" style="height: 300px; overflow-y: auto; border: 1px solid #dee2e6; border-radius: 0.25rem; padding: 1rem;">
+                                <div class="chat-welcome">
+                                    <p class="text-center text-muted mb-2"><i class="bi bi-robot"></i> Research Assistant AI</p>
+                                    <p class="text-center">Hello! I'm your research assistant. You can ask me questions about the research results or request additional information.</p>
+                                </div>
+                            </div>
+                            <div class="input-group">
+                                <input type="text" id="chat-input" class="form-control" placeholder="Type your message here..." aria-label="Chat message">
+                                <button class="btn btn-primary" type="button" id="send-button">
+                                    <i class="bi bi-send"></i> Send
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Footer -->
@@ -535,5 +563,157 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Chat JavaScript -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const chatInput = document.getElementById('chat-input');
+            const sendButton = document.getElementById('send-button');
+            const chatMessages = document.getElementById('chat-messages');
+            const sessionId = '{{ chat_session_id }}';
+            
+            // Function to add a message to the chat
+            function addMessage(message, sender) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `chat-message ${sender}-message mb-3`;
+                
+                // Style based on sender
+                if (sender === 'user') {
+                    messageDiv.innerHTML = `
+                        <div class="d-flex justify-content-end">
+                            <div class="message-content p-2 px-3 rounded" style="background-color: var(--primary-color); color: white; max-width: 80%;">
+                                ${message}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    messageDiv.innerHTML = `
+                        <div class="d-flex">
+                            <div class="message-content p-2 px-3 rounded" style="background-color: #f1f1f1; max-width: 80%;">
+                                ${message}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            // Function to send a message to the server
+            function sendMessage() {
+                const message = chatInput.value.trim();
+                if (!message) return;
+                
+                // Add user message to chat
+                addMessage(message, 'user');
+                chatInput.value = '';
+                
+                // Show loading indicator
+                const loadingDiv = document.createElement('div');
+                loadingDiv.className = 'chat-message assistant-message mb-3 loading-message';
+                loadingDiv.innerHTML = `
+                    <div class="d-flex">
+                        <div class="message-content p-2 px-3 rounded" style="background-color: #f1f1f1; max-width: 80%;">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <span class="ms-2">Thinking...</span>
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(loadingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                
+                // Send message to server
+                fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        message: message
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove loading indicator
+                    chatMessages.removeChild(loadingDiv);
+                    
+                    // Add AI response to chat
+                    if (data.error) {
+                        addMessage(`Error: ${data.error}`, 'assistant');
+                    } else {
+                        addMessage(data.response, 'assistant');
+                    }
+                })
+                .catch(error => {
+                    // Remove loading indicator
+                    chatMessages.removeChild(loadingDiv);
+                    addMessage(`Error: ${error.message}`, 'assistant');
+                });
+            }
+            
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            chatInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+            
+            // Load chat history if available
+            fetch(`/chat_history?session_id=${sessionId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.history && data.history.length > 0) {
+                        // Clear welcome message
+                        chatMessages.innerHTML = '';
+                        
+                        // Add messages from history
+                        data.history.forEach(msg => {
+                            if (msg.role === 'user') {
+                                addMessage(msg.content, 'user');
+                            } else {
+                                addMessage(msg.content, 'assistant');
+                            }
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading chat history:', error);
+                });
+        });
+    </script>
+    
+    <!-- Chat Styles -->
+    <style>
+        .chat-message {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+        
+        .user-message .message-content {
+            border-radius: 18px 18px 0 18px !important;
+        }
+        
+        .assistant-message .message-content {
+            border-radius: 0 18px 18px 18px !important;
+        }
+        
+        #chat-input {
+            border-radius: 20px;
+            padding-left: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        #chat-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(67, 97, 238, 0.25);
+        }
+        
+        #send-button {
+            border-radius: 0 20px 20px 0;
+        }
+    </style>
 </body>
 </html>

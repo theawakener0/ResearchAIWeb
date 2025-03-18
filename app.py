@@ -1,9 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, session
 import os
 from werkzeug.utils import secure_filename
 from langchain_google_genai import GoogleGenerativeAI
 from langchain_community.document_loaders import YoutubeLoader
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import markdown
@@ -14,6 +14,10 @@ from langchain.tools import Tool
 from langchain.agents import initialize_agent, AgentType
 from langchain_community.tools import WikipediaQueryRun
 from langchain_community.utilities import WikipediaAPIWrapper  # Add this import
+from langchain.memory import ConversationBufferMemory
+import uuid
+import json
+from datetime import datetime
 
 app = Flask(__name__)
 
@@ -21,6 +25,7 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max upload size
 app.secret_key = 'research_ai_secret_key'  # Required for flash messages
+app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # Session lifetime in seconds (24 hours)
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -123,6 +128,10 @@ def initialize_research_agent():
 
 # Initialize the research agent
 research_agent = initialize_research_agent()
+
+# Chat memory storage - using a dictionary to store conversation history
+# Key is session ID, value is a list of messages
+chat_sessions = {}
 
 def run_research_agent(query: str):
     """
@@ -319,6 +328,25 @@ def index():
         # Convert markdown to HTML
         html_result = markdown.markdown(response)
         
+                # Create a unique session ID for this research session if not exists
+        if 'chat_session_id' not in session:
+            session['chat_session_id'] = str(uuid.uuid4())
+        
+        # Initialize chat memory for this session
+        session_id = session['chat_session_id']
+        if session_id not in chat_sessions:
+            chat_sessions[session_id] = {
+                'messages': [],
+                'context': {
+                    'research_result': response,
+                    'role': user_inputs["role"],
+                    'topic': user_inputs["topic"],
+                    'pdf': user_inputs["attachments"]["pdf"],
+                    'youtube': user_inputs["attachments"]["youtube"],
+                    'website': user_inputs["attachments"]["website"]
+                }
+            }
+        
         # Render results template with data
         return render_template('results.html', 
                               result=html_result,
@@ -333,7 +361,8 @@ def index():
                               research_mode=research_mode,
                               pdf_content=pdf_content,
                               pdf_filename=pdf_filename,
-                              website_content=website_content)
+                              website_content=website_content,
+                              chat_session_id=session_id)
     
     # GET request - render index template
     return render_template('index.html')
@@ -370,6 +399,95 @@ def scrape_website(url):
     except Exception as e:
         print(f"Error scraping website: {str(e)}")
         return None
+
+
+@app.route('/chat', methods=['POST'])
+def chat():
+    try:
+        # Get the chat session ID
+        session_id = request.json.get('session_id')
+        user_message = request.json.get('message')
+        
+        if not session_id or not user_message or session_id not in chat_sessions:
+            return jsonify({'error': 'Invalid session or message'}), 400
+        
+        # Get the chat context
+        chat_context = chat_sessions[session_id]
+        
+        # Add user message to history
+        chat_context['messages'].append({
+            'role': 'user',
+            'content': user_message,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+        # Create system message with context
+        research_context = f"""You are a helpful AI research assistant. You are discussing research on the topic: {chat_context['context']['topic']}.
+        
+The user has received a research report that contains the following information:
+{chat_context['context']['research_result']}
+
+The user may ask questions about this research or request additional information.
+
+Sources used in the research:
+- PDF: {chat_context['context']['pdf']}
+- YouTube: {chat_context['context']['youtube']}
+- Website: {chat_context['context']['website']}
+
+Please provide helpful, accurate responses based on this research context."""
+        
+        # Create messages for the AI
+        messages = [
+            SystemMessage(content=research_context)
+        ]
+        
+        # Add conversation history (last 10 messages to avoid token limits)
+        for msg in chat_context['messages'][-10:]:
+            if msg['role'] == 'user':
+                messages.append(HumanMessage(content=msg['content']))
+            else:
+                messages.append(AIMessage(content=msg['content']))
+        
+        # Generate AI response
+        llm = GoogleGenerativeAI(
+            model="gemini-2.0-pro-exp-02-05", 
+            temperature=0.7,
+            api_key=API_KEY
+        )
+        
+        ai_response = llm.invoke(messages)
+        
+        # Add AI response to history
+        chat_context['messages'].append({
+            'role': 'assistant',
+            'content': ai_response,
+            'timestamp': datetime.now().isoformat()
+        })
+        
+        # Convert markdown to HTML for display
+        html_response = markdown.markdown(ai_response)
+        
+        return jsonify({
+            'response': html_response,
+            'raw_response': ai_response,
+            'history': chat_context['messages']
+        })
+        
+    except Exception as e:
+        print(f"Chat error: {str(e)}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/chat_history', methods=['GET'])
+def get_chat_history():
+    session_id = request.args.get('session_id')
+    
+    if not session_id or session_id not in chat_sessions:
+        return jsonify({'error': 'Invalid session ID'}), 400
+    
+    return jsonify({
+        'history': chat_sessions[session_id]['messages']
+    })
 
 
 if __name__ == '__main__':
