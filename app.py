@@ -34,7 +34,7 @@ app.config['PERMANENT_SESSION_LIFETIME'] = 86400  # Session lifetime in seconds 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # API key for Google Gemini
-API_KEY = "AIzaSyAVoY_PlX6yY0g7_jBq-Awb_G9VqqgzghY"
+API_KEY = "AIzaSyDAi8T-btBComG9Cs5KrGhbswxNKZNBl7I"
 
 # Remove Google client initialization
 # Instead, we'll use LangChain's abstractions
@@ -67,12 +67,12 @@ def generate_research_response(query: str):
     try:
         # Use LangChain's wrapper instead of direct Google API
         llm = GoogleGenerativeAI(
-            model="gemini-2.0-pro-exp-02-05",
+            model="gemini-2.0-flash-thinking-exp-01-21",
             api_key=API_KEY,
             temperature=0.5,
             top_p=0.95,
             top_k=64,
-            max_output_tokens=8192
+            max_output_tokens=65536
         )
         
         response = llm.invoke(query)
@@ -105,7 +105,7 @@ research_tool = Tool(
 
 # Initialize LangChain Chat Model
 llm = GoogleGenerativeAI(
-    model="gemini-2.0-pro-exp-02-05", 
+    model="gemini-2.0-flash-thinking-exp-01-21", 
     temperature=0.3,
     api_key=API_KEY
 )
@@ -150,13 +150,13 @@ def run_research_agent(query: str):
 
 # Standard models for basic research
 model_creative = GoogleGenerativeAI(
-    model="gemini-2.0-flash-exp", 
+    model="gemini-2.0-flash-thinking-exp-01-21", 
     api_key=API_KEY,
     temperature=0.7
 )
 
 model_datadriven = GoogleGenerativeAI(
-    model="gemini-2.0-flash-exp", 
+    model="gemini-2.0-flash-thinking-exp-01-21", 
     api_key=API_KEY,
     temperature=0.2
 )
@@ -672,8 +672,8 @@ Please provide helpful, accurate responses based on this research context."""
         
         # Generate AI response
         llm = GoogleGenerativeAI(
-            model="gemini-2.0-pro-exp-02-05", 
-            temperature=0.5,
+            model="gemini-2.0-flash-thinking-exp-01-21", 
+            temperature=0.7,
             api_key=API_KEY
         )
         

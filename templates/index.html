@@ -534,8 +534,9 @@
                             <div class="form-text">Multiple iterations allow for deeper, more refined research results.</div>
                         </div>
                         <div class="text-center">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                            <button type="submit" class="btn btn-primary btn-lg" id="research-button">
                                 <i class="bi bi-search me-2"></i>Generate Research
+                                <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true" id="button-spinner"></span>
                             </button>
                         </div>
                     </form>
@@ -561,3 +562,41 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JavaScript for animations -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Button loading animation
+            const researchForm = document.querySelector('form');
+            const researchButton = document.getElementById('research-button');
+            const buttonSpinner = document.getElementById('button-spinner');
+            
+            if (researchForm && researchButton) {
+                researchForm.addEventListener('submit', function(e) {
+                    // Show loading animation
+                    researchButton.disabled = true;
+                    buttonSpinner.classList.remove('d-none');
+                    
+                    // Change button text
+                    researchButton.innerHTML = `
+                        <i class="bi bi-hourglass-split me-2"></i>Generating Research
+                        <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+                    `;
+                    
+                    // Add a subtle pulse animation to the button
+                    researchButton.style.animation = 'pulse 1.5s infinite';
+                    
+                    // Allow the form to submit normally after showing the animation
+                    // The page will redirect to the loading or results page
+                });
+            }
+            
+            // Add animation classes to elements for staggered reveal
+            const animatedElements = document.querySelectorAll('.card, .section-title');
+            animatedElements.forEach((element, index) => {
+                element.style.animationDelay = `${0.1 * index}s`;
+            });
+        });
+    </script>
+</body>
+</html>
