@@ -18,8 +18,14 @@ from langchain.memory import ConversationBufferMemory
 import uuid
 import json
 from datetime import datetime
+import logging
+from research_agent import ResearchAgent
 
 app = Flask(__name__)
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
 # Add Jinja2 global variables
 app.jinja_env.globals.update(now=datetime.now)
@@ -36,7 +42,9 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 # API key for Google Gemini
 API_KEY = "AIzaSyDAi8T-btBComG9Cs5KrGhbswxNKZNBl7I"
 
-# Remove Google client initialization
+# Initialize the advanced research agent
+research_agent = ResearchAgent(api_key=API_KEY)
+
 # Instead, we'll use LangChain's abstractions
 
 def load_and_split_pdf_document(file_path):
@@ -80,57 +88,7 @@ def generate_research_response(query: str):
     except Exception as e:
         return f"Error generating research response: {str(e)}"
 
-# Define Wikipedia tool for research
-try:
-    # Create a WikipediaAPIWrapper instance first
-    wiki_api_wrapper = WikipediaAPIWrapper()
-    
-    # Pass the api_wrapper to WikipediaQueryRun
-    wikipedia_tool = Tool(
-        name="Wikipedia Search",
-        func=WikipediaQueryRun(api_wrapper=wiki_api_wrapper).run,
-        description="Searches Wikipedia for academic and general knowledge queries."
-    )
-except Exception as e:
-    print(f"Warning: Wikipedia tool initialization failed: {str(e)}")
-    wikipedia_tool = None
 
-# Remove SerpAPI tool definition
-# Define LangChain Tool for research
-research_tool = Tool(
-    name="Research AI Agent",
-    func=generate_research_response,
-    description="Uses AI to perform research on a given query."
-)
-
-# Initialize LangChain Chat Model
-llm = GoogleGenerativeAI(
-    model="gemini-2.0-flash-thinking-exp-01-21", 
-    temperature=0.3,
-    api_key=API_KEY
-)
-
-# Create a LangChain agent with available research tools
-def initialize_research_agent():
-    tools = [research_tool]
-    if wikipedia_tool:
-        tools.append(wikipedia_tool)
-    # Remove SerpAPI tool from the agent
-    
-    try:
-        agent = initialize_agent(
-            tools=tools,
-            llm=llm,
-            agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-            verbose=True,
-        )
-        return agent
-    except Exception as e:
-        print(f"Warning: Agent initialization failed: {str(e)}")
-        return None
-
-# Initialize the research agent
-research_agent = initialize_research_agent()
 
 # Chat memory storage - using a dictionary to store conversation history
 # Key is session ID, value is a list of messages
@@ -138,21 +96,24 @@ chat_sessions = {}
 
 def run_research_agent(query: str):
     """
-    Runs the research agent with a given query, utilizing multiple sources.
+    Runs the advanced research agent with a given query, utilizing multiple sources.
+    This uses the ResearchAgent class which can dynamically select appropriate sources
+    (arXiv, PubMed, DuckDuckGo, Wikipedia) based on the query domain.
     """
-    if research_agent:
-        try:
-            return research_agent.run(query)
-        except Exception as e:
-            return f"Error running research agent: {str(e)}"
-    else:
+    try:
+        logger.info(f"Running advanced research agent for query: {query}")
+        result = research_agent.research(query)
+        return result
+    except Exception as e:
+        logger.error(f"Error running advanced research agent: {str(e)}")
+        
         return generate_research_response(query)  # Fallback to direct API call
 
 # Standard models for basic research
 model_creative = GoogleGenerativeAI(
     model="gemini-2.0-flash-thinking-exp-01-21", 
     api_key=API_KEY,
-    temperature=0.7
+    temperature=0.7,
 )
 
 model_datadriven = GoogleGenerativeAI(
@@ -272,18 +233,33 @@ def enhanced_research_pipeline(query, iterations=3, research_mode="standard", mo
     
     # Step 1: Generate Research Plan
     planning_prompt = f"""
-    You are a research planning expert. Create a structured research plan for the following query:
-    
-    {query}
-    
-    Your plan should include:
-    1. Clear research objectives
-    2. 3-5 key questions to investigate
-    3. A structured outline with sections (Introduction, Key Areas to Explore, Methodology, Expected Outcomes)
-    4. Specific search terms that would yield the best results
-    
-    Format your response as a structured research plan.
+                You are an expert in research planning with a proven track record in designing comprehensive, actionable research strategies. Based on the research query below, create a detailed research plan that includes the following components:
+
+                1. Research Objectives:  
+                - Define clear, concise objectives that outline what the research aims to achieve.
+
+                2. Key Research Questions:  
+                - List 3-5 critical questions that need to be answered to address the research query.
+
+                3. Structured Research Outline:  
+                Develop an organized outline with the following sections:
+                - Introduction:  
+                    Provide context, background information, and the significance of the topic.
+                - Key Areas to Explore:  
+                    Identify major themes or aspects that require further investigation.
+                - Methodology:  
+                    Detail the approaches, methods, and tools (including any relevant databases or search engines) that will be used to gather and analyze data.
+                - Expected Outcomes:  
+                    Outline anticipated findings, potential implications, and how the results may impact the field.
+
+                4. Search Strategy:  
+                - Recommend specific search terms and keywords tailored to yield high-quality, relevant results across academic databases and general search engines.
+
+                Your final output should be a structured and clearly formatted research plan that serves as a roadmap for investigating the following query:
+
+                Research Query: {query}
     """
+
     
     # Select model based on user preference
     if model_selection == "1":
@@ -590,37 +566,6 @@ def index():
     return render_template('index.html')
 
 
-def scrape_website(url):
-    try:
-        import requests
-        from bs4 import BeautifulSoup
-        from langchain_core.documents import Document
-        
-        # Send a GET request to the URL
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-        }
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()  # Raise an exception for 4XX/5XX responses
-        
-        # Parse the HTML content
-        soup = BeautifulSoup(response.text, 'html.parser')
-        
-        # Remove script and style elements
-        for script in soup(["script", "style", "header", "footer", "nav"]):
-            script.extract()
-        
-        # Get the text content
-        text = soup.get_text(separator='\n', strip=True)
-        
-        # Split the text into chunks
-        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100)
-        chunks = [Document(page_content=chunk, metadata={"source": url}) for chunk in splitter.split_text(text)]
-        
-        return chunks
-    except Exception as e:
-        print(f"Error scraping website: {str(e)}")
-        return None
 
 
 @app.route('/chat', methods=['POST'])
