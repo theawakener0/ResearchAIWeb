@@ -409,6 +409,18 @@
                                 <span class="research-meta-label">Date:</span>
                                 <span>{{ date if date else now().strftime('%Y-%m-%d') }}</span>
                             </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Word Count:</span>
+                                <span>{{ word_count if word_count else 'N/A' }}</span>
+                            </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Sources Count:</span>
+                                <span>{{ sources_count if sources_count else '0' }}</span>
+                            </div>
+                            <div class="research-meta-item">
+                                <span class="research-meta-label">Start Time:</span>
+                                <span>{{ start_time if start_time else 'Not recorded' }}</span>
+                            </div>
                         </div>
                         <div class="d-grid gap-2 mt-3">
                             <a href="{{ url_for('index') }}" class="btn btn-primary">

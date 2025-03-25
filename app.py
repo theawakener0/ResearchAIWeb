@@ -75,7 +75,7 @@ def generate_research_response(query: str):
     try:
         # Use LangChain's wrapper instead of direct Google API
         llm = GoogleGenerativeAI(
-            model="gemini-2.0-flash-thinking-exp-01-21",
+            model="gemini-2.5-pro-exp-03-25",
             api_key=API_KEY,
             temperature=0.5,
             top_p=0.95,
@@ -111,13 +111,13 @@ def run_research_agent(query: str):
 
 # Standard models for basic research
 model_creative = GoogleGenerativeAI(
-    model="gemini-2.0-flash-thinking-exp-01-21", 
+    model="gemini-2.5-pro-exp-03-25", 
     api_key=API_KEY,
     temperature=0.7,
 )
 
 model_datadriven = GoogleGenerativeAI(
-    model="gemini-2.0-flash-thinking-exp-01-21", 
+    model="gemini-2.5-pro-exp-03-25", 
     api_key=API_KEY,
     temperature=0.2
 )
@@ -617,7 +617,7 @@ Please provide helpful, accurate responses based on this research context."""
         
         # Generate AI response
         llm = GoogleGenerativeAI(
-            model="gemini-2.0-flash-thinking-exp-01-21", 
+            model="gemini-2.5-pro-exp-03-25", 
             temperature=0.7,
             api_key=API_KEY
         )

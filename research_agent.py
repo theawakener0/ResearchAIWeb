@@ -46,7 +46,7 @@ class ResearchAgent:
         
         # Initialize LLM using Gemini 2.0
         self.llm = GoogleGenerativeAI(
-            model="gemini-2.0-flash-thinking-exp-01-21",
+            model="gemini-2.5-pro-exp-03-25",
             google_api_key=api_key,
             temperature=0.3,
             top_p=0.95,
@@ -160,7 +160,7 @@ class ResearchAgent:
     
     def _generate_research_response(self, query: str):
         """
-        Generates a research response using Gemini 2.0.
+        Generates a research response using Gemini 2.5.
         
         Args:
             query: The research query
@@ -171,7 +171,7 @@ class ResearchAgent:
         try:
             # Create a specialized version of the LLM for in-depth thinking
             thinking_llm = GoogleGenerativeAI(
-                model="gemini-2.0-flash-thinking-exp-01-21",
+                model="gemini-2.5-pro-exp-03-25",
                 google_api_key=self.api_key,
                 temperature=0.5,
                 top_p=0.95,
